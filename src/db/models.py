@@ -2,6 +2,7 @@ from datetime import datetime
 
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql.functions import func
+from sqlalchemy.sql.schema import ForeignKey
 from sqlalchemy.sql.sqltypes import LargeBinary, DateTime
 from argon2.exceptions import VerifyMismatchError
 
@@ -39,6 +40,7 @@ class Transaction(Base):
     __tablename__ = "transactions"
 
     id: Mapped[int] = mapped_column(nullable=False, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     description: Mapped[str]
     is_income: Mapped[bool] = mapped_column(nullable=False, default=True)
     value: Mapped[float]
