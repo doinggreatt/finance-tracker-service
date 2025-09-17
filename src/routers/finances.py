@@ -53,6 +53,30 @@ async def get_user_transactions(db_sess: DBSession, req: Request):
 
     return trnsctns
 
+@router.put("/{trnsctn_id}", response_model=ReadSingleTransactionSchema)
+async def update_user_transaction(db_sess: DBSession, trnsctn_id: int, req: Request, trnsctn_data: WriteSingleTransactionSchema):
+    user = await get_user_by(db_sess=db_sess, field=UserLookupField.REQUEST, value=req)
+
+    if not user:
+        raise HTTPException(status_code=404, detail="Not Found")
+
+    stmt = select(Transaction).where(Transaction.id == trnsctn_id)
+    rslt = await db_sess.execute(stmt)
+
+    trnsctn = rslt.scalars().one_or_none()
+
+    if not trnsctn or trnsctn.user_id != user.id:
+        raise HTTPException(status_code=404, detail="Not Found")
+
+
+    update_data = trnsctn_data.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(trnsctn, field, value)
+
+    await db_sess.commit()
+    await db_sess.refresh(trnsctn)
+    return trnsctn
+
 @router.delete("/{trnsctn_id}", status_code=204)
 async def delete_user_transaction(db_sess: DBSession, trnsctn_id: int, req: Request):
     user = await get_user_by(db_sess=db_sess, field=UserLookupField.REQUEST, value=req)
